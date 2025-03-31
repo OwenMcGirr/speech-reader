@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Switch, Slider } from 'react-native';
+import { View, Text, StyleSheet, Switch } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { useSettingsStore } from '@/store/useSettingsStore';
 
 export default function SettingsScreen() {
