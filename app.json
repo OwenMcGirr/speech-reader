@@ -29,6 +29,9 @@
       "eas": {
         "projectId": "9e1feea7-432c-45c7-b8f5-584867cf6632"
       }
+    },
+    "android": {
+      "package": "com.enaboapps.speechreader"
     }
   }
 }
