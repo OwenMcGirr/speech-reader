@@ -25,6 +25,7 @@ export default function ReaderScreen() {
     fontSize,
     isDarkMode,
     autoAdvance,
+    selectedVoice,
   } = useSettingsStore();
 
   useEffect(() => {
@@ -60,6 +61,14 @@ export default function ReaderScreen() {
       // Use Web Speech API for web platform
       const utterance = new SpeechSynthesisUtterance(paragraph);
       
+      if (selectedVoice) {
+        const voices = window.speechSynthesis.getVoices();
+        const voice = voices.find(v => v.voiceURI === selectedVoice);
+        if (voice) {
+          utterance.voice = voice;
+        }
+      }
+      
       utterance.onend = () => {
         handleParagraphDone();
       };
@@ -69,6 +78,7 @@ export default function ReaderScreen() {
       // Use Expo Speech API for native platforms
       try {
         await Speech.speak(paragraph, {
+          voice: selectedVoice || undefined,
           onDone: () => {
             handleParagraphDone();
           }
