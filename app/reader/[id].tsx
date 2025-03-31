@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
@@ -11,6 +11,8 @@ export default function ReaderScreen() {
   const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
   const [showParagraphList, setShowParagraphList] = useState(false);
+  const isPlayingRef = useRef(false);
+  const currentParagraphRef = useRef(0);
   
   const {
     documents,
@@ -37,37 +39,46 @@ export default function ReaderScreen() {
     };
   }, [id, setCurrentDocument]);
 
+  const handleParagraphDone = async () => {
+    if (!currentDocument) return;
+
+    if (autoAdvance && currentParagraphRef.current < currentDocument.content.length - 1 && isPlayingRef.current) {
+      currentParagraphRef.current += 1;
+      setCurrentParagraph(currentDocument.id, currentParagraphRef.current);
+      speakParagraph();
+    } else {
+      setIsPlaying(false);
+      isPlayingRef.current = false;
+    }
+  };
+
   const speakParagraph = async () => {
     if (!currentDocument) return;
     
-    const paragraph = currentDocument.content[currentDocument.currentParagraph];
+    const paragraph = currentDocument.content[currentParagraphRef.current];
 
     if (Platform.OS === 'web') {
       // Use Web Speech API for web platform
       const utterance = new SpeechSynthesisUtterance(paragraph);
       
       utterance.onend = () => {
-        if (autoAdvance && currentDocument.currentParagraph < currentDocument.content.length - 1) {
-          setCurrentParagraph(currentDocument.id, currentDocument.currentParagraph + 1);
-          speakParagraph();
-        } else {
-          setIsPlaying(false);
-        }
+        handleParagraphDone();
       };
 
       window.speechSynthesis.speak(utterance);
     } else {
       // Use Expo Speech API for native platforms
-      await Speech.speak(paragraph, {
-        onDone: () => {
-          if (autoAdvance && currentDocument.currentParagraph < currentDocument.content.length - 1) {
-            setCurrentParagraph(currentDocument.id, currentDocument.currentParagraph + 1);
-            speakParagraph();
-          } else {
-            setIsPlaying(false);
+      try {
+        await Speech.speak(paragraph, {
+          onDone: () => {
+            handleParagraphDone();
           }
-        },
-      });
+        });
+      } catch (error) {
+        console.error('Speech error:', error);
+        setIsPlaying(false);
+        isPlayingRef.current = false;
+      }
     }
   };
 
@@ -79,8 +90,12 @@ export default function ReaderScreen() {
         await Speech.stop();
       }
       setIsPlaying(false);
+      isPlayingRef.current = false;
     } else {
+      if (!currentDocument) return;
       setIsPlaying(true);
+      isPlayingRef.current = true;
+      currentParagraphRef.current = currentDocument.currentParagraph;
       speakParagraph();
     }
   };
@@ -92,20 +107,23 @@ export default function ReaderScreen() {
       await Speech.stop();
     }
     setIsPlaying(false);
+    isPlayingRef.current = false;
   };
 
   const handlePrevious = () => {
     if (!currentDocument || currentDocument.currentParagraph === 0) return;
     const newParagraph = currentDocument.currentParagraph - 1;
     setCurrentParagraph(currentDocument.id, newParagraph);
-    stopPlayback(); // Stop playback when navigating
+    currentParagraphRef.current = newParagraph;
+    stopPlayback();
   };
 
   const handleNext = () => {
     if (!currentDocument || currentDocument.currentParagraph === currentDocument.content.length - 1) return;
     const newParagraph = currentDocument.currentParagraph + 1;
     setCurrentParagraph(currentDocument.id, newParagraph);
-    stopPlayback(); // Stop playback when navigating
+    currentParagraphRef.current = newParagraph;
+    stopPlayback();
   };
 
   if (!currentDocument) {
