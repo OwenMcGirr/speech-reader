@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, Stack } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { ChevronLeft, ChevronRight, Play, Pause, Store as Stop, Bookmark, List } from 'lucide-react-native';
 import { useDocumentStore } from '@/store/useDocumentStore';
@@ -8,7 +8,6 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 
 export default function ReaderScreen() {
   const { id } = useLocalSearchParams();
-  const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
   const [showParagraphList, setShowParagraphList] = useState(false);
   const isPlayingRef = useRef(false);
@@ -132,27 +131,27 @@ export default function ReaderScreen() {
 
   return (
     <View style={[styles.container, isDarkMode && styles.darkContainer]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ChevronLeft size={24} color={isDarkMode ? '#fff' : '#000'} />
-        </TouchableOpacity>
-        <Text style={[styles.title, isDarkMode && styles.darkText]}>
-          {currentDocument.name}
-        </Text>
-        <TouchableOpacity
-          onPress={() => toggleBookmark(currentDocument.id, currentDocument.currentParagraph)}>
-          <Bookmark
-            size={24}
-            color={
-              currentDocument.bookmarks.includes(currentDocument.currentParagraph)
-                ? '#007AFF'
-                : isDarkMode
-                ? '#fff'
-                : '#000'
-            }
-          />
-        </TouchableOpacity>
-      </View>
+      <Stack.Screen 
+        options={{
+          title: currentDocument.name,
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => toggleBookmark(currentDocument.id, currentDocument.currentParagraph)}
+              style={{ marginRight: 15 }}>
+              <Bookmark
+                size={24}
+                color={
+                  currentDocument.bookmarks.includes(currentDocument.currentParagraph)
+                    ? '#007AFF'
+                    : isDarkMode
+                    ? '#fff'
+                    : '#000'
+                }
+              />
+            </TouchableOpacity>
+          ),
+        }}
+      />
 
       <ScrollView 
         style={styles.contentScroll}
@@ -277,23 +276,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 20,
   },
   darkContainer: {
     backgroundColor: '#1a1a1a',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 18,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  darkText: {
-    color: '#fff',
   },
   contentScroll: {
     flex: 1,
@@ -320,9 +305,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   navButton: {
-    padding: 10,
+    padding: 15,
     borderRadius: 10,
     backgroundColor: '#f5f5f5',
   },
@@ -335,12 +321,12 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   playButton: {
-    padding: 10,
+    padding: 15,
     borderRadius: 10,
     backgroundColor: '#f5f5f5',
   },
   stopButton: {
-    padding: 10,
+    padding: 15,
     borderRadius: 10,
     backgroundColor: '#f5f5f5',
   },
@@ -351,7 +337,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 20,
     bottom: 80,
-    padding: 10,
+    padding: 15,
     backgroundColor: '#f5f5f5',
     borderRadius: 25,
   },
@@ -386,5 +372,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
     marginRight: 10,
+  },
+  darkText: {
+    color: '#fff',
   },
 });
